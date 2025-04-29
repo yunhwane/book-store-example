@@ -6,7 +6,11 @@ include(
     "services:book-service",
     "services:view-service",
     "services:review-service",
-    "services:like-service"
+    "services:like-service",
+    "common",
+    "common:snowflake",
+    "tests",
+    "tests:api-docs"
 )
 
 pluginManagement {

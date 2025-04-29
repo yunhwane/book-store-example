@@ -1,0 +1,22 @@
+spring:
+  application:
+    name: book-service
+
+
+  jpa:
+    open-in-view: false
+    hibernate:
+      ddl-auto: validate
+    properties:
+      hibernate:
+        default_batch_fetch_size: 100
+    database-platform: org.hibernate.dialect.MySQL8Dialect
+
+
+  datasource:
+    url: jdbc:mysql://localhost:3306/book
+    username: root
+    password: 1234
+    driver-class-name: com.mysql.cj.jdbc.Driver
+
+
