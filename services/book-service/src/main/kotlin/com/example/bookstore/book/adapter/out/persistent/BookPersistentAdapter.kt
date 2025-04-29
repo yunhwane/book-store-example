@@ -58,6 +58,25 @@ class BookPersistentAdapter(
         )
     }
 
+    override fun getBooks(limit: Long, offset: Long): List<Book> {
+        return jpaBookRepository.findAll(limit, offset).map {
+            Book(
+                bookId = it.id,
+                title = it.title,
+                content = it.content,
+                category = it.category,
+                author = it.author,
+                createdAt = it.createdAt,
+                updatedAt = it.updatedAt
+            )
+        }
+
+    }
+
+    override fun count(limit: Long): Long {
+        return jpaBookRepository.count(limit);
+    }
+
     override fun delete(bookId: Long) {
 
         val book = jpaBookRepository.findById(bookId).orElseThrow {
