@@ -2,6 +2,7 @@ package com.example.bookstore.book.adapter.`in`.web
 
 import com.example.bookstore.book.adapter.`in`.web.request.SaveBookRequest
 import com.example.bookstore.book.adapter.`in`.web.request.UpdateBookRequest
+import com.example.bookstore.book.application.port.`in`.DeleteBookUseCase
 import com.example.bookstore.book.application.port.`in`.SaveBookUseCase
 import com.example.bookstore.book.application.port.`in`.UpdateBookUseCase
 import com.example.bookstore.book.domain.Book
@@ -9,7 +10,9 @@ import com.example.bookstore.book.domain.Category
 import com.example.bookstore.test.api.RestDocsTest
 import com.example.bookstore.test.api.RestDocsUtils.requestPreprocessor
 import com.example.bookstore.test.api.RestDocsUtils.responsePreprocessor
+import io.mockk.Runs
 import io.mockk.every
+import io.mockk.just
 import io.mockk.mockk
 import io.restassured.http.ContentType
 import org.junit.jupiter.api.BeforeEach
@@ -29,13 +32,15 @@ class BookControllerTest : RestDocsTest() {
 
     private lateinit var saveBookUseCase: SaveBookUseCase
     private lateinit var updateBookUseCase: UpdateBookUseCase
+    private lateinit var deleteBookUseCase: DeleteBookUseCase
     private lateinit var saveBookController: BookController
 
     @BeforeEach
     fun setUp() {
         saveBookUseCase = mockk(relaxUnitFun = true)
         updateBookUseCase = mockk(relaxUnitFun = true)
-        var saveBookController = BookController(saveBookUseCase, updateBookUseCase)
+        deleteBookUseCase = mockk(relaxUnitFun = true)
+        var saveBookController = BookController(saveBookUseCase, updateBookUseCase, deleteBookUseCase)
         mockMvc = mockController(saveBookController)
     }
 
@@ -151,6 +156,30 @@ class BookControllerTest : RestDocsTest() {
                         fieldWithPath("data.createdAt").type(JsonFieldType.STRING).description("책 최초 생성일 (ISO8601 포맷)"),
                         fieldWithPath("data.updatedAt").type(JsonFieldType.STRING).description("책 수정일시 (ISO8601 포맷)"),
                         fieldWithPath("error").type(JsonFieldType.NULL).description("에러 정보 (성공시 null)")
+                    )
+                )
+            )
+    }
+
+    @Test
+    fun should_delete_book_when_request_is_valid_204() {
+        // given
+        every { deleteBookUseCase.execute(1L) } just Runs
+
+        // when
+        given()
+            .contentType(ContentType.JSON)
+            .`when`()
+            .delete("/api/v1/books/{bookId}", 1L)
+            .then()
+            .statusCode(HttpStatus.NO_CONTENT.value())
+            .apply(
+                document(
+                    "delete-book",
+                    requestPreprocessor(),
+                    responsePreprocessor(),
+                    pathParameters(
+                        parameterWithName("bookId").description("삭제할 책 ID")
                     )
                 )
             )

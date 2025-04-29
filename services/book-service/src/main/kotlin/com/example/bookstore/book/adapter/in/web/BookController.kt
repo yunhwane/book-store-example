@@ -5,11 +5,13 @@ import com.example.bookstore.book.adapter.`in`.web.request.UpdateBookRequest
 import com.example.bookstore.book.adapter.`in`.web.response.SaveBookResponse
 import com.example.bookstore.book.adapter.`in`.web.response.UpdateBookResponse
 import com.example.bookstore.book.adapter.`in`.web.support.ApiResponse
+import com.example.bookstore.book.application.port.`in`.DeleteBookUseCase
 import com.example.bookstore.book.application.port.`in`.SaveBookCommand
 import com.example.bookstore.book.application.port.`in`.SaveBookUseCase
 import com.example.bookstore.book.application.port.`in`.UpdateBookCommand
 import com.example.bookstore.book.application.port.`in`.UpdateBookUseCase
 import org.springframework.http.ResponseEntity
+import org.springframework.web.bind.annotation.DeleteMapping
 import org.springframework.web.bind.annotation.PathVariable
 import org.springframework.web.bind.annotation.PostMapping
 import org.springframework.web.bind.annotation.PutMapping
@@ -23,7 +25,8 @@ import java.net.URI
 @RequestMapping("/api/v1/books")
 class BookController(
     private val saveBookUseCase: SaveBookUseCase,
-    private val updateBookUseCase: UpdateBookUseCase
+    private val updateBookUseCase: UpdateBookUseCase,
+    private val deleteBookUseCase: DeleteBookUseCase
 ) {
 
     @PostMapping
@@ -79,4 +82,11 @@ class BookController(
             )
         )
     }
+
+    @DeleteMapping("/{bookId}")
+    fun delete(@PathVariable bookId: Long): ResponseEntity<ApiResponse<Void>> {
+        deleteBookUseCase.execute(bookId)
+        return ResponseEntity.noContent().build()
+    }
+
 }
