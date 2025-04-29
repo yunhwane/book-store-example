@@ -5,6 +5,7 @@ import com.example.bookstore.book.adapter.`in`.web.request.UpdateBookRequest
 import com.example.bookstore.book.adapter.`in`.web.response.MetaResponse
 import com.example.bookstore.book.application.port.`in`.DeleteBookUseCase
 import com.example.bookstore.book.application.port.`in`.ReadAllBookUseCase
+import com.example.bookstore.book.application.port.`in`.ReadBookUseCase
 import com.example.bookstore.book.application.port.`in`.SaveBookUseCase
 import com.example.bookstore.book.application.port.`in`.UpdateBookUseCase
 import com.example.bookstore.book.domain.Book
@@ -39,6 +40,7 @@ class BookControllerTest : RestDocsTest() {
     private lateinit var updateBookUseCase: UpdateBookUseCase
     private lateinit var deleteBookUseCase: DeleteBookUseCase
     private lateinit var readAllBookUseCase: ReadAllBookUseCase
+    private lateinit var readBookUseCase: ReadBookUseCase
     private lateinit var saveBookController: BookController
 
     @BeforeEach
@@ -47,7 +49,8 @@ class BookControllerTest : RestDocsTest() {
         updateBookUseCase = mockk(relaxUnitFun = true)
         deleteBookUseCase = mockk(relaxUnitFun = true)
         readAllBookUseCase = mockk(relaxUnitFun = true)
-        var saveBookController = BookController(saveBookUseCase, updateBookUseCase, deleteBookUseCase, readAllBookUseCase)
+        readBookUseCase = mockk(relaxUnitFun = true)
+        var saveBookController = BookController(saveBookUseCase, updateBookUseCase, deleteBookUseCase, readAllBookUseCase, readBookUseCase)
         mockMvc = mockController(saveBookController)
     }
 
@@ -191,6 +194,53 @@ class BookControllerTest : RestDocsTest() {
                 )
             )
     }
+
+    @Test
+    fun should_return_book_detail_when_valid_request_200() {
+        // given
+        val book = Book(
+            bookId = 1L,
+            title = "테스트 책 제목",
+            content = "테스트 책 내용",
+            category = Category.FANTASY,
+            author = "홍길동",
+            createdAt = LocalDateTime.now(),
+            updatedAt = LocalDateTime.now()
+        )
+
+        every { readBookUseCase.execute(1L) } returns book
+
+        // when
+        given()
+            .contentType(ContentType.JSON)
+            .`when`()
+            .get("/api/v1/books/{bookId}", 1L)
+            .then()
+            .statusCode(HttpStatus.OK.value())
+            .apply(
+                document(
+                    "get-book",
+                    requestPreprocessor(),
+                    responsePreprocessor(),
+                    pathParameters(
+                        parameterWithName("bookId").description("조회할 책 ID")
+                    ),
+                    responseFields(
+                        fieldWithPath("result").type(JsonFieldType.STRING).description("요청 결과 (SUCCESS 또는 ERROR)"),
+                        fieldWithPath("data.id").type(JsonFieldType.NUMBER).description("책 ID"),
+                        fieldWithPath("data.title").type(JsonFieldType.STRING).description("책 제목"),
+                        fieldWithPath("data.content").type(JsonFieldType.STRING).description("책 내용"),
+                        fieldWithPath("data.category").type(JsonFieldType.STRING).description("책 카테고리"),
+                        fieldWithPath("data.author").type(JsonFieldType.STRING).description("책 저자"),
+                        fieldWithPath("data.createdAt").type(JsonFieldType.STRING).description("책 생성일시 (ISO8601 포맷)"),
+                        fieldWithPath("data.updatedAt").type(JsonFieldType.STRING).description("책 수정일시 (ISO8601 포맷)"),
+                        fieldWithPath("error").type(JsonFieldType.NULL).description("에러 정보 (성공 시 null)")
+                    )
+                )
+            )
+    }
+
+
 
     @Test
     fun should_return_books_page_when_valid_request_200() {
