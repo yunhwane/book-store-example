@@ -8,7 +8,9 @@ include(
     "services:review-service",
     "services:like-service",
     "common",
-    "common:snowflake"
+    "common:snowflake",
+    "tests",
+    "tests:api-docs"
 )
 
 pluginManagement {
