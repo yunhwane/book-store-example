@@ -3,6 +3,7 @@ package com.example.bookstore.book.adapter.out.persistent
 import Snowflake
 import com.example.bookstore.book.adapter.out.persistent.entity.BookEntity
 import com.example.bookstore.book.adapter.out.persistent.repository.JpaBookRepository
+import com.example.bookstore.book.application.port.out.DeleteBookPort
 import com.example.bookstore.book.application.port.out.LoadBookPort
 import com.example.bookstore.book.application.port.out.SaveBookPort
 import com.example.bookstore.book.domain.Book
@@ -13,7 +14,7 @@ import java.time.LocalDateTime
 @Component
 class BookPersistentAdapter(
     private val jpaBookRepository: JpaBookRepository,
-) : SaveBookPort, LoadBookPort{
+) : SaveBookPort, LoadBookPort, DeleteBookPort {
 
     private val snowflake = Snowflake()
 
@@ -55,5 +56,14 @@ class BookPersistentAdapter(
             createdAt = bookEntity.createdAt,
             updatedAt = bookEntity.updatedAt
         )
+    }
+
+    override fun delete(bookId: Long) {
+
+        val book = jpaBookRepository.findById(bookId).orElseThrow {
+            IllegalArgumentException("Book not found with id: $bookId")
+        }
+
+        jpaBookRepository.delete(book)
     }
 }
