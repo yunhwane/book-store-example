@@ -2,11 +2,15 @@ package com.example.bookstore.book.adapter.`in`.web
 
 import com.example.bookstore.book.adapter.`in`.web.request.SaveBookRequest
 import com.example.bookstore.book.adapter.`in`.web.request.UpdateBookRequest
+import com.example.bookstore.book.adapter.`in`.web.response.MetaResponse
 import com.example.bookstore.book.application.port.`in`.DeleteBookUseCase
+import com.example.bookstore.book.application.port.`in`.ReadAllBookUseCase
 import com.example.bookstore.book.application.port.`in`.SaveBookUseCase
 import com.example.bookstore.book.application.port.`in`.UpdateBookUseCase
 import com.example.bookstore.book.domain.Book
 import com.example.bookstore.book.domain.Category
+import com.example.bookstore.book.domain.Meta
+import com.example.bookstore.book.domain.ReadAllBooksPageResult
 import com.example.bookstore.test.api.RestDocsTest
 import com.example.bookstore.test.api.RestDocsUtils.requestPreprocessor
 import com.example.bookstore.test.api.RestDocsUtils.responsePreprocessor
@@ -25,6 +29,7 @@ import org.springframework.restdocs.payload.PayloadDocumentation.requestFields
 import org.springframework.restdocs.payload.PayloadDocumentation.responseFields
 import org.springframework.restdocs.request.RequestDocumentation.parameterWithName
 import org.springframework.restdocs.request.RequestDocumentation.pathParameters
+import org.springframework.restdocs.request.RequestDocumentation.queryParameters
 import java.time.LocalDateTime
 
 
@@ -33,6 +38,7 @@ class BookControllerTest : RestDocsTest() {
     private lateinit var saveBookUseCase: SaveBookUseCase
     private lateinit var updateBookUseCase: UpdateBookUseCase
     private lateinit var deleteBookUseCase: DeleteBookUseCase
+    private lateinit var readAllBookUseCase: ReadAllBookUseCase
     private lateinit var saveBookController: BookController
 
     @BeforeEach
@@ -40,7 +46,8 @@ class BookControllerTest : RestDocsTest() {
         saveBookUseCase = mockk(relaxUnitFun = true)
         updateBookUseCase = mockk(relaxUnitFun = true)
         deleteBookUseCase = mockk(relaxUnitFun = true)
-        var saveBookController = BookController(saveBookUseCase, updateBookUseCase, deleteBookUseCase)
+        readAllBookUseCase = mockk(relaxUnitFun = true)
+        var saveBookController = BookController(saveBookUseCase, updateBookUseCase, deleteBookUseCase, readAllBookUseCase)
         mockMvc = mockController(saveBookController)
     }
 
@@ -180,6 +187,57 @@ class BookControllerTest : RestDocsTest() {
                     responsePreprocessor(),
                     pathParameters(
                         parameterWithName("bookId").description("삭제할 책 ID")
+                    )
+                )
+            )
+    }
+
+    @Test
+    fun should_return_books_page_when_valid_request_200() {
+        // given
+        val book = Book(
+            bookId = 1L,
+            title = "테스트 책",
+            content = "테스트 책 내용",
+            category = Category.FANTASY,
+            author = "홍길동",
+            createdAt = LocalDateTime.now(),
+            updatedAt = LocalDateTime.now()
+        )
+        val meta = Meta(bookCount = 1)
+        val bookPage = ReadAllBooksPageResult(book = listOf(book), meta = meta)
+
+        every { readAllBookUseCase.execute(any(), any()) } returns bookPage
+
+        // when
+        given()
+            .contentType(ContentType.JSON)
+            .queryParam("page", 1)
+            .queryParam("pageSize", 10)
+            .`when`()
+            .get("/api/v1/books")
+            .then()
+            .statusCode(HttpStatus.OK.value())
+            .apply(
+                document(
+                    "get-books",
+                    requestPreprocessor(),
+                    responsePreprocessor(),
+                    queryParameters(
+                        parameterWithName("page").description("조회할 페이지 번호 (1부터 시작)"),
+                        parameterWithName("pageSize").description("한 페이지당 데이터 수")
+                    ),
+                    responseFields(
+                        fieldWithPath("result").type(JsonFieldType.STRING).description("요청 결과 (SUCCESS 또는 ERROR)"),
+                        fieldWithPath("data.books[].id").type(JsonFieldType.NUMBER).description("책 ID"),
+                        fieldWithPath("data.books[].title").type(JsonFieldType.STRING).description("책 제목"),
+                        fieldWithPath("data.books[].content").type(JsonFieldType.STRING).description("책 내용"),
+                        fieldWithPath("data.books[].category").type(JsonFieldType.STRING).description("책 카테고리"),
+                        fieldWithPath("data.books[].author").type(JsonFieldType.STRING).description("저자"),
+                        fieldWithPath("data.books[].createdAt").type(JsonFieldType.STRING).description("생성 일시 (ISO8601 포맷)"),
+                        fieldWithPath("data.books[].updatedAt").type(JsonFieldType.STRING).description("수정 일시 (ISO8601 포맷)"),
+                        fieldWithPath("data.meta.bookCount").type(JsonFieldType.NUMBER).description("총 책 개수"),
+                        fieldWithPath("error").type(JsonFieldType.NULL).description("에러 정보 (성공 시 null)")
                     )
                 )
             )
