@@ -10,6 +10,7 @@ import com.example.bookstore.book.adapter.`in`.web.response.UpdateBookResponse
 import com.example.bookstore.book.adapter.`in`.web.support.ApiResponse
 import com.example.bookstore.book.application.port.`in`.DeleteBookUseCase
 import com.example.bookstore.book.application.port.`in`.ReadAllBookUseCase
+import com.example.bookstore.book.application.port.`in`.ReadBookUseCase
 import com.example.bookstore.book.application.port.`in`.SaveBookCommand
 import com.example.bookstore.book.application.port.`in`.SaveBookUseCase
 import com.example.bookstore.book.application.port.`in`.UpdateBookCommand
@@ -33,7 +34,8 @@ class BookController(
     private val saveBookUseCase: SaveBookUseCase,
     private val updateBookUseCase: UpdateBookUseCase,
     private val deleteBookUseCase: DeleteBookUseCase,
-    private val readAllBookUseCase: ReadAllBookUseCase
+    private val readAllBookUseCase: ReadAllBookUseCase,
+    private val readBookUseCase: ReadBookUseCase
 ) {
 
     @GetMapping
@@ -63,6 +65,27 @@ class BookController(
                         bookCount = books.meta.bookCount
                     )
                 )
+            )
+        )
+    }
+
+    @GetMapping("/{bookId}")
+    fun getBook(@PathVariable bookId: Long): ResponseEntity<ApiResponse<ReadBookResponse>> {
+        val book = readBookUseCase.execute(bookId)
+
+        val readBookResponse = ReadBookResponse(
+            id = book.bookId!!,
+            title = book.title,
+            content = book.content,
+            category = book.category,
+            author = book.author,
+            createdAt = book.createdAt,
+            updatedAt = book.updatedAt
+        )
+
+        return ResponseEntity.ok(
+            ApiResponse.success(
+                data = readBookResponse
             )
         )
     }
